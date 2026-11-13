@@ -16,7 +16,7 @@ jobs:
 
     - name: Compile with Clang
       run: |
-        clang openautoclicker.c resource.rc -o OpenAutoClicker.exe -lcomctl32 -lgdi32 '-Wl,--subsystem,windows' -O2
+        clang openautoclicker.c resource.syso -o OpenAutoClicker.exe -lcomctl32 -lgdi32 '-Wl,--subsystem,windows' -O2
 
     - name: Upload Binary Artifact
       uses: actions/upload-artifact@v4
