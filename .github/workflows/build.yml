@@ -3,6 +3,8 @@ name: Build OpenAutoClicker
 on:
   push:
     branches: [ "main", "master" ]
+  release:
+    types: [published]
 
 jobs:
   build-windows:
@@ -12,17 +14,18 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up Zig
-      uses: mlugg/setup-zig@v1
-      with:
-        zig-version: latest
-
-    - name: Compile with Zig CC (Auto-links resource.syso)
+    - name: Compile with Clang
       run: |
-        zig cc openautoclicker.c resource.syso -o OpenAutoClicker.exe -lcomctl32 -lgdi32 -Wl,--subsystem,windows -O2
+        clang openautoclicker.c resource.rc -o OpenAutoClicker.exe -lcomctl32 -lgdi32 -Wl,--subsystem,windows -O2
 
     - name: Upload Binary Artifact
       uses: actions/upload-artifact@v4
       with:
         name: OpenAutoClicker-Windows
         path: OpenAutoClicker.exe
+
+    - name: Upload to Release (If Published)
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: OpenAutoClicker.exe
