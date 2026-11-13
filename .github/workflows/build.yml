@@ -1,54 +1,28 @@
-name: Build and Auto-Tag OpenAutoClicker
+name: Build OpenAutoClicker
 
 on:
   push:
     branches: [ "main", "master" ]
 
-permissions:
-  contents: write  # Required for pushing git tags and releases
-
 jobs:
-  build-and-tag:
+  build-windows:
     runs-on: windows-latest
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Required to see existing tags and push new ones
 
-    - name: Set up MSYS2 and GCC
-      uses: msys2/setup-msys2@v2
+    - name: Set up Zig
+      uses: mlugg/setup-zig@v1
       with:
-        msystem: MINGW64
-        update: true
-        install: mingw-w64-x86_64-toolchain
+        zig-version: latest
 
-    - name: Compile with GCC
-      shell: msys2 {0}
+    - name: Compile with Zig CC (Auto-links resource.syso)
       run: |
-        gcc openautoclicker.c resource.rc -o OpenAutoClicker.exe -lcomctl32 -lgdi32 -mwindows -O2
+        zig cc openautoclicker.c resource.syso -o OpenAutoClicker.exe -lcomctl32 -lgdi32 -Wl,--subsystem,windows -O2
 
-    - name: Generate Auto Tag
-      id: tagger
-      shell: bash
-      run: |
-        # Generate a version tag based on year.month.day and run number (e.g., v2026.11.13-4)
-        DATE_TAG="v$(date +%Y.%m.%d)-${{ github.run_number }}"
-        echo "tag=$DATE_TAG" >> $GITHUB_OUTPUT
-        
-        # Configure git identity for the runner bot
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        
-        # Create and push the tag
-        git tag "$DATE_TAG"
-        git push origin "$DATE_TAG"
-
-    - name: Create GitHub Release & Upload Binary
-      uses: softprops/action-gh-release@v1
+    - name: Upload Binary Artifact
+      uses: actions/upload-artifact@v4
       with:
-        tag_name: ${{ steps.tagger.outputs.tag }}
-        name: OpenAutoClicker ${{ steps.tagger.outputs.tag }}
-        files: OpenAutoClicker.exe
-        body: "Automated build of OpenAutoClicker compiled with GCC on Windows."
+        name: OpenAutoClicker-Windows
+        path: OpenAutoClicker.exe
